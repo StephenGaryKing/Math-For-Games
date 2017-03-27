@@ -48,13 +48,13 @@ A large amount of numbers can be displayed in a small amount of characters
 
 5. Using Two's complement convert the following between decimal and binary (for binary use 1 signed byte)
 
-* 10000000		-	
+* 10000000		-	-128
 
-* 10101010		-
+* 10101010		-	-86
 
-* 11110000		-
+* 11110000		-	-16
 
-* 11001100		-
+* 11001100		-	-49
 
 * -16			-	11000
 
