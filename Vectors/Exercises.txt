@@ -1,0 +1,11 @@
+1. Given the vectors A = (2,3) and B = (-2, -4) find the answers for the following:
+
+a. A + B		(0,-1)
+
+b. A - B		(4,7)
+
+c. -2A + 3B		(-4,-6) + (-6,-12) = (-10, -18)
+
+d. A x 3.5		(7.0, 10.5)
+
+e. B / 2.0		(-4.0,-8.0)
