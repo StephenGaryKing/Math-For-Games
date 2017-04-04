@@ -95,6 +95,11 @@
   <ItemGroup>
     <ClInclude Include="Application2D.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\Libraries\MathLibrary\MathLibrary\MathLibrary.vcxproj">
+      <Project>{2df68ed1-20eb-4caf-878c-9885b72658fc}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

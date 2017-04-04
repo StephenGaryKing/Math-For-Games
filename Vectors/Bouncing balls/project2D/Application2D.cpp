@@ -20,50 +20,95 @@ bool Application2D::startup() {
 
 	centerOfTheWindow = { (float)getWindowWidth() / 2 , (float)getWindowHeight() / 2 };
 
-	for (int i = 0; i < amountOfBalls; i++)
-	{
-		m_ball.push_back(new Ball({ rand() % 200 + centerOfTheWindow.x - 100, rand() % 200 + centerOfTheWindow.y - 100 }, 30));
-	}
+	m_suns.push_back(new Ball({ centerOfTheWindow.x + 400, centerOfTheWindow.y }));
+	m_suns.push_back(new Ball({ centerOfTheWindow.x - 400,  centerOfTheWindow.y }));
 
 	m_cameraX = 0;
 	m_cameraY = 0;
 	m_timer = 0;
-	gravity = 20;
+	m_gravity = 20;
 
 	return true;
 }
 
 void Application2D::shutdown() {
-	for (int i = 0; i < amountOfBalls; i++)
+	for (int i = 0; i < m_ball.size(); i++)
 	{
 		delete m_ball[i];
 	}
+	delete m_suns[0];
+	delete m_suns[1];
 	delete m_2dRenderer;
 }
 
 void Application2D::update(float deltaTime) {
 	m_timer += deltaTime;
-
-	// input example
+	// input
 	aie::Input* input = aie::Input::getInstance();
 
-	for (int i = 0; i < m_ball.size(); i++)
+	Vector2 newVec;
+
+	if (input->isMouseButtonUp(0))
 	{
-		m_ball[i]->UpdatePhysics(gravity, deltaTime, getWindowWidth(), getWindowHeight());
+		centerOfTheWindow = { (float)getWindowWidth() / 2 , (float)getWindowHeight() / 2 };
 
-		for (int a = 0; a < m_ball.size(); a++)
+		m_suns[0]->SetPosition({ centerOfTheWindow.x + 400, centerOfTheWindow.y });
+		m_suns[1]->SetPosition({ centerOfTheWindow.x - 400, centerOfTheWindow.y });
+
+		//find closest sun
+		for (int i = 0; i < m_ball.size(); i++)
 		{
-			if (m_ball[i]->GetPosition() != m_ball[a]->GetPosition())
-			m_ball[i]->CheckCollision(m_ball[a]);
-		}
-	}
+			Ball* currentClosestSun = m_ball[i]->GetClosestSun(m_suns);
+			m_ball[i]->UpdatePhysics(currentClosestSun, deltaTime, getWindowWidth(), getWindowHeight(), m_timer);
 
-	if (input->wasKeyPressed(aie::INPUT_KEY_SPACE))
-		m_ball.push_back(new Ball({ rand() % 200 + centerOfTheWindow.x - 100, rand() % 200 + centerOfTheWindow.y - 100 }, 30));
-	
-	// exit the application
-	if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
-		quit();
+			for (int a = 0; a < m_ball.size(); a++)
+			{
+				if (m_ball[i]->GetPosition() != m_ball[a]->GetPosition())
+					m_ball[i]->CheckCollision(m_ball[a]);
+			}
+			if (m_ball[i]->CheckCollision(currentClosestSun))
+			{
+				currentClosestSun->SetSize(currentClosestSun->GetSize() + m_ball[i]->GetSize());
+				m_ball[i] = m_ball[m_ball.size() - 1];
+				m_ball.pop_back();
+				i--;
+			}
+		}
+
+		if (input->wasKeyPressed(aie::INPUT_KEY_UP))
+		{
+			m_suns[0]->SetSize(m_suns[0]->GetSize() + 10);
+			m_suns[1]->SetSize(m_suns[1]->GetSize() - 10);
+		}
+
+		if (input->wasKeyPressed(aie::INPUT_KEY_DOWN))
+		{
+			m_suns[0]->SetSize(m_suns[0]->GetSize() - 10);
+			m_suns[1]->SetSize(m_suns[1]->GetSize() + 10);
+		}
+
+		if (input->wasKeyPressed(aie::INPUT_KEY_SPACE))
+			m_ball.push_back(new Ball({ centerOfTheWindow.x, centerOfTheWindow.y }, 10));
+
+		// exit the application
+		if (input->isKeyDown(aie::INPUT_KEY_ESCAPE))
+			quit();
+	}
+	else
+	{
+		
+		if (input->wasMouseButtonPressed(0))
+		{
+			m_ballSpawn[0] = { input->getMouseX() * 1.0f, input->getMouseY() * 1.0f };
+		}
+
+		m_ballSpawn[1] = { input->getMouseX() * 1.0f, input->getMouseY() * 1.0f };
+		newVec = m_ballSpawn[1].Subtract(m_ballSpawn[0]);
+	}
+	if (input->wasMouseButtonPressed(0))
+	{
+		m_ball.push_back(new Ball({ m_ballSpawn[0].x, m_ballSpawn[0].y }, 10, newVec));
+	}
 }
 
 void Application2D::draw() {
@@ -76,12 +121,26 @@ void Application2D::draw() {
 
 	// begin drawing sprites
 	m_2dRenderer->begin();
+
+	m_2dRenderer->setRenderColour(1.0f, 0.5f, 0.0f, 1);
+	m_2dRenderer->drawCircle(m_suns[0]->GetPosition().x, m_suns[0]->GetPosition().y, m_suns[0]->GetSize());
+	m_2dRenderer->setRenderColour(1.0f, 0.5f, 0.0f, 1);
+	m_2dRenderer->drawCircle(m_suns[1]->GetPosition().x, m_suns[1]->GetPosition().y, m_suns[1]->GetSize());
 	
 	for (int i = 0; i < m_ball.size(); i++)
 	{
 		m_2dRenderer->setRenderColour(m_ball[i]->GetColour().R, m_ball[i]->GetColour().G, m_ball[i]->GetColour().B, 1);
 		m_2dRenderer->drawCircle(m_ball[i]->GetPosition().x, m_ball[i]->GetPosition().y, m_ball[i]->GetSize());
-	}
+		if (m_ball[i]->GetMyline().linePositions.size() > 1)
+		{
+			for (int j = 0; j < m_ball[i]->GetMyline().linePositions.size() - 1; j++)
+			{
+				m_2dRenderer->drawLine(m_ball[i]->GetMyline().linePositions[j].x, m_ball[i]->GetMyline().linePositions[j].y, m_ball[i]->GetMyline().linePositions[j + 1].x, m_ball[i]->GetMyline().linePositions[j + 1].y);
+			}
+		}
+	}	
+
+	m_2dRenderer->drawLine(m_ballSpawn[0].x, m_ballSpawn[0].y, m_ballSpawn[1].x, m_ballSpawn[1].y);
 
 	// done drawing sprites
 	m_2dRenderer->end();
